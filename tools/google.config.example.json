@@ -1,0 +1,7 @@
+{
+  "_readme": "EXAMPLE ONLY — dummy values. Copy this file to %APPDATA%\\crisis-plan\\google.json (or the path in the CRISISPLAN_GOOGLE_CONFIG environment variable), OUTSIDE this repo, and fill it in during the one-time Google setup (step 3.2). Never commit the real file. See tools/gconfig.py and PRIVACY.md.",
+  "test_calendar_id": "EXAMPLE-test-calendar-id@group.calendar.google.com",
+  "real_calendar_id": "EXAMPLE-real-calendar-id@group.calendar.google.com",
+  "credentials_file": "C:/Users/EXAMPLE/crisis-plan-secrets/oauth-client.json",
+  "token_file": "C:/Users/EXAMPLE/crisis-plan-secrets/token.json"
+}

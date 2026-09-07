@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────────────────
+# PRIVACY GUARD — see PRIVACY.md
+# This repo holds the PLAN, never the DATA. Populated financial, medical, and
+# credential data must live OUTSIDE this repo (encrypted store / password
+# manager / with the solicitor). The patterns below are a safety net so that
+# sensitive files can't be committed by accident. Do NOT force-add past them
+# without a deliberate reason.
+# ─────────────────────────────────────────────────────────────────────────
+
+# Designated local-only area — never tracked. Put anything sensitive here if
+# it must sit on disk, and keep it out of git entirely.
+/private/
+/local/
+*.local
+*.local.*
+
+# Spreadsheets & data exports (asset registers, bank statements, valuations)
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.tsv
+*.ods
+*.numbers
+
+# Augment sidecar caches (tools/augment.py) — belong beside the real
+# workbook or under private/, never tracked
+*.augment.json
+
+# Credential / key material
+*.kdbx
+*.kdb
+*.key
+*.pem
+*.p12
+*.pfx
+secrets*
+password*
+passwords*
+credential*
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Python build artefacts
+__pycache__/
+*.pyc

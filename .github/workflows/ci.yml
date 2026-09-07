@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+env:
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Install from the vendored wheels so CI also proves the offline
+      # install path (AC-D5) still works.
+      - run: pip install --no-index --find-links tools/vendor -r tools/requirements.txt
+      - run: python tools/tests/run_all.py

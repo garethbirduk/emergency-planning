@@ -1,0 +1,23 @@
+# Crisis-plan generator — pinned dependencies (see SPEC §8 durability).
+#
+# Target interpreter: Python 3.12 (built/tested on 3.12.10).
+#
+# Deliberately dependency-light. The ONLY third-party requirement for the
+# local engine is openpyxl, to read the .xlsx source of truth.
+#
+# .ics calendar files are built with the standard library (plain string
+# construction per RFC 5545) — no icalendar dependency — so the local engine
+# stays runnable with a bare Python + openpyxl install a decade from now.
+#
+# Google integration (Phase 3) turned out to need NO third-party deps at
+# all: tools/gcal.py talks to the Calendar API with urllib + a hand-rolled
+# OAuth installed-app flow, precisely so there is nothing extra to rot.
+#
+# Offline / vendored install (AC-D5): the wheels for everything below are
+# committed under tools/vendor/ (pure-Python, platform-independent):
+#   pip install --no-index --find-links tools\vendor -r tools\requirements.txt
+# To refresh after changing a pin:
+#   pip download <package>==<version> -d tools/vendor --no-deps
+
+openpyxl==3.1.5
+et_xmlfile==2.0.0    # openpyxl's only dependency
