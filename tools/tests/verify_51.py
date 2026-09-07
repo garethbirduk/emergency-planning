@@ -14,7 +14,7 @@ from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-SCRATCH = Path(tempfile.mkdtemp(prefix="crisisplan-verify51-"))
+SCRATCH = Path(tempfile.mkdtemp(prefix="crisisplan-verify51-")).resolve()
 sys.path.insert(0, str(REPO / "tools"))
 
 import wizard  # noqa: E402

@@ -15,7 +15,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SAMPLE = REPO / "samples" / "pat.sample.xlsx"
-SCRATCH = Path(tempfile.mkdtemp(prefix="crisisplan-verify23-"))
+SCRATCH = Path(tempfile.mkdtemp(prefix="crisisplan-verify23-")).resolve()
 AUGMENT = REPO / "tools" / "augment.py"
 CLI = REPO / "tools" / "generate.py"
 sys.path.insert(0, str(REPO / "tools"))
