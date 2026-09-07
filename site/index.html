@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emergency planning</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; color: #1a1a2e;
+         background: #f4f2ec; line-height: 1.6; }
+  main { max-width: 720px; margin: 0 auto; padding: 3rem 1.2rem; }
+  h1 { font-size: 2rem; margin-bottom: .3rem; }
+  .tag { color: #4a7c59; font-weight: 600; margin-top: 0; }
+  .btn { display: inline-block; background: #4a7c59; color: white;
+         border-radius: 8px; padding: .7rem 1.3rem; font-size: 1.05rem;
+         text-decoration: none; margin: .3rem .5rem .3rem 0; }
+  .btn.alt { background: #444; }
+  .card { background: white; border-radius: 8px; padding: 1.2rem 1.5rem;
+          margin: 1.2rem 0; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+  code, pre { background: #eeece4; border-radius: 4px;
+              padding: .1rem .35rem; font-size: .92em; }
+  pre { padding: .8rem 1rem; overflow-x: auto; }
+  footer { color: #777; font-size: .85rem; margin-top: 3rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Emergency planning</h1>
+  <p class="tag">A crisis plan before the crisis — so 3am panic becomes a
+  lookup.</p>
+
+  <p>One spreadsheet holds where everything is: accounts, property,
+  pensions, wishes, key documents, who does what. When someone dies, one
+  command turns it into a <b>dated checklist</b> of what to do and in what
+  order, plus a <b>calendar</b> with the same tasks — assigned to the
+  people named in the plan.</p>
+
+  <p>
+    <a class="btn" href="demo.html">Try the live demo</a>
+    <a class="btn alt"
+       href="https://github.com/garethbirduk/emergency-planning">View on
+       GitHub</a>
+  </p>
+
+  <div class="card">
+    <b>The demo runs entirely in your browser.</b> The actual Python
+    engine runs via WebAssembly; nothing you type is saved or sent
+    anywhere, and it all vanishes when the tab closes. It's preloaded
+    with a fictional family so you can see the output in seconds.
+  </div>
+
+  <div class="card">
+    <b>For a real plan, run it locally</b> — your data never belongs in a
+    browser tab or a repo:
+    <pre>git clone https://github.com/garethbirduk/emergency-planning
+cd emergency-planning
+pip install --no-index --find-links tools/vendor -r tools/requirements.txt
+python tools/wizard.py</pre>
+    The wizard opens a form in your browser served from your own machine,
+    writes a workbook to your documents folder, and shows the command
+    that generates the plan. An optional Google Calendar push can put the
+    dated tasks on a shared family calendar.
+  </div>
+
+  <div class="card">
+    <b>Design principles</b>: local-first (offline by default), one
+    engine driven entirely by the workbook, durable (pinned vendored
+    dependencies, plain-text outputs), and private by construction — the
+    tool refuses to read real data from inside its own repo, and the repo
+    holds only fictional sample people.
+  </div>
+
+  <footer>MIT licensed. The plan holds pointers, never secrets — see
+  PRIVACY.md in the repo.</footer>
+</main>
+</body>
+</html>

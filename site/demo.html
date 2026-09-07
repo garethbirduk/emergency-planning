@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emergency planning — live demo</title>
+<style>
+  :root { --ink: #1a1a2e; --amber: #8a5a00; --amber-bg: #fff3d6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; color: var(--ink);
+         background: #f4f2ec; }
+  .banner { background: var(--amber-bg); color: var(--amber);
+            border-bottom: 2px solid #e8c96a; padding: .6rem 1rem;
+            font-size: .95rem; }
+  .banner b { color: #6b4400; }
+  .banner a { color: inherit; }
+  #stage { max-width: 1100px; margin: 0 auto; padding: .5rem; }
+  #loading { text-align: center; padding: 4rem 1rem; }
+  #loading .bar { height: 6px; background: #ddd; border-radius: 3px;
+                  max-width: 420px; margin: 1rem auto; overflow: hidden; }
+  #loading .bar div { height: 100%; width: 0; background: #4a7c59;
+                      transition: width .4s; }
+  #wiz { width: 100%; height: calc(100vh - 60px); border: 0;
+         background: white; border-radius: 6px; }
+  #result { display: none; background: white; border-radius: 6px;
+            padding: 1.5rem; margin-top: .5rem; }
+  #result pre { background: #f6f6f2; padding: 1rem; border-radius: 6px;
+                overflow-x: auto; font-size: .82rem; line-height: 1.45; }
+  #result details { margin: .6rem 0; border: 1px solid #ddd;
+                    border-radius: 6px; padding: .5rem .8rem; }
+  #result summary { cursor: pointer; font-weight: 600; }
+  .btn { display: inline-block; background: #4a7c59; color: white;
+         border: 0; border-radius: 6px; padding: .55rem 1rem;
+         font-size: .95rem; cursor: pointer; text-decoration: none;
+         margin: .2rem .3rem .2rem 0; }
+  .btn.alt { background: #666; }
+  #err { display: none; background: #fdd; color: #700; padding: 1rem;
+         border-radius: 6px; margin: 1rem 0; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="banner">
+  <b>Demo — nothing is saved or sent.</b> Everything on this page runs in
+  your browser (Python via WebAssembly); the plan it builds vanishes when
+  you close the tab. For a real plan, run the tool locally:
+  <a href="https://github.com/garethbirduk/emergency-planning">clone the
+  repo</a> and run <code>python tools/wizard.py</code>.
+</div>
+<div id="stage">
+  <div id="loading">
+    <h2>Loading the wizard…</h2>
+    <p id="loadmsg">Fetching the Python runtime (a few MB, one-off)</p>
+    <div class="bar"><div id="loadbar"></div></div>
+  </div>
+  <div id="err"></div>
+  <iframe id="wiz" hidden></iframe>
+  <div id="result"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script>
+const PYFILES = ["wizard", "generate", "make_template", "augment",
+                 "gconfig", "reader", "roles", "tasks", "outputs", "prep"];
+let shim = null;
+
+function progress(pct, msg) {
+  document.getElementById("loadbar").style.width = pct + "%";
+  if (msg) document.getElementById("loadmsg").textContent = msg;
+}
+function fail(msg) {
+  const el = document.getElementById("err");
+  el.style.display = "block";
+  el.textContent = "The demo could not start: " + msg;
+  document.getElementById("loading").style.display = "none";
+}
+
+async function boot() {
+  try {
+    progress(10, "Starting Python…");
+    const pyodide = await loadPyodide();
+    progress(40, "Installing openpyxl…");
+    await pyodide.loadPackage("micropip");
+    const micropip = pyodide.pyimport("micropip");
+    await micropip.install(["openpyxl==3.1.5"]);
+    progress(60, "Fetching the tool…");
+    pyodide.FS.mkdirTree("/app/tools");
+    pyodide.FS.mkdirTree("/app/samples");
+    for (const name of PYFILES) {
+      const src = await (await fetch("tools/" + name + ".py")).text();
+      pyodide.FS.writeFile("/app/tools/" + name + ".py", src);
+    }
+    const wb = await (await fetch("samples/pat.sample.xlsx")).arrayBuffer();
+    pyodide.FS.writeFile("/app/samples/pat.sample.xlsx",
+                         new Uint8Array(wb));
+    const shimSrc = await (await fetch("demo_shim.py")).text();
+    pyodide.FS.writeFile("/demo_shim.py", shimSrc);
+    progress(80, "Preparing the sample plan…");
+    pyodide.runPython("import sys; sys.path.insert(0, '/')");
+    shim = pyodide.pyimport("demo_shim");
+    showForm(shim.setup());
+    progress(100);
+    document.getElementById("loading").style.display = "none";
+  } catch (e) {
+    fail(e.message || String(e));
+  }
+}
+
+function showForm(html) {
+  const iframe = document.getElementById("wiz");
+  document.getElementById("result").style.display = "none";
+  iframe.hidden = false;
+  iframe.srcdoc = html;
+  iframe.addEventListener("load", () => wire(iframe), { once: true });
+}
+
+function wire(iframe) {
+  const w = iframe.contentWindow;
+  const realFetch = w.fetch.bind(w);
+  w.fetch = async (url, opts) => {
+    const path = String(url);
+    if (path.startsWith("/save")) {
+      const body = String(opts.body);
+      return new Response(shim.save(body),
+          { headers: { "Content-Type": "application/json" } });
+    }
+    if (path.startsWith("/pick")) return new Response("");
+    return realFetch(url, opts);
+  };
+  const form = iframe.contentDocument.querySelector("form");
+  if (form) form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const body = new URLSearchParams(new FormData(form)).toString();
+    showResult(JSON.parse(shim.create(body)));
+  });
+}
+
+window.demoReload = (path) => showForm(shim.form_html(path));
+
+function download(name, data, isB64) {
+  const bytes = isB64
+      ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
+      : new TextEncoder().encode(data);
+  const url = URL.createObjectURL(new Blob([bytes]));
+  const a = Object.assign(document.createElement("a"),
+                          { href: url, download: name });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showResult(data) {
+  const el = document.getElementById("result");
+  document.getElementById("wiz").hidden = true;
+  el.style.display = "block";
+  if (!data.ok && data.error) {
+    el.innerHTML = "";
+    const p = document.createElement("p");
+    p.textContent = "The wizard said: " + data.error;
+    el.append(p, mkBtn("Back to the form", backToForm));
+    return;
+  }
+  if (data.path) lastEditing = data.path;
+  el.innerHTML = "";
+  const h = document.createElement("h2");
+  h.textContent = "Your demo crisis plan (trigger date " + data.trigger + ")";
+  el.append(h);
+  const intro = document.createElement("p");
+  intro.textContent = "The workbook was written and the real generator ran "
+      + "on it — entirely in this browser tab. This is exactly what a "
+      + "local run produces:";
+  el.append(intro);
+  const health = document.createElement("pre");
+  health.textContent = data.health.trim();
+  el.append(health);
+  const files = Object.entries(data.files);
+  const order = ["checklist.md", "preparation.md", "plan.ics"];
+  const rank = (n) => order.indexOf(n) === -1 ? 99 : order.indexOf(n);
+  files.sort((a, b) => rank(a[0]) - rank(b[0]));
+  for (const [name, text] of files) {
+    const d = document.createElement("details");
+    if (name === "checklist.md") d.open = true;
+    const s = document.createElement("summary");
+    s.textContent = name;
+    const pre = document.createElement("pre");
+    pre.textContent = text;
+    d.append(s, pre);
+    el.append(d);
+  }
+  const bar = document.createElement("p");
+  bar.append(
+    mkBtn("Download workbook (.xlsx)", () =>
+        download(data.workbook, data.workbook_b64, true)),
+    mkBtn("Download checklist.md", () =>
+        download("checklist.md", data.files["checklist.md"] || "", false)),
+    mkBtn("Back to the form", backToForm, "alt"));
+  el.append(bar);
+  el.scrollIntoView();
+}
+
+let lastEditing = "/data/pat-sample/pat-sample.xlsx";
+function backToForm() { showForm(shim.form_html(lastEditing)); }
+
+function mkBtn(label, onclick, cls) {
+  const b = document.createElement("button");
+  b.className = "btn" + (cls ? " " + cls : "");
+  b.textContent = label;
+  b.onclick = onclick;
+  return b;
+}
+
+boot();
+</script>
+</body>
+</html>
